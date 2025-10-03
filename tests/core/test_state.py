@@ -226,3 +226,51 @@ def test_state_apply_keeps_typing_system():
     state = State({"foo": "bar"}, typing_system=SimpleTypingSystem())
     assert state.update(foo="baz").typing_system is state.typing_system
     assert state.subset("foo").typing_system is state.typing_system
+
+
+def test_state_keys_display():
+    large_object = {"embedding": [0.1] * 100, "text": "large text" * 50}
+    state = State({"small_key": 42, "large_key": large_object})
+    
+    keys = state.keys()
+    keys_repr = repr(keys)
+    
+    assert "small_key" in keys_repr
+    assert "large_key" in keys_repr
+    
+    assert "embedding" not in keys_repr
+    assert "large text" not in keys_repr
+    assert "0.1" not in keys_repr
+    
+    assert keys_repr.startswith("StateKeys(")
+    assert keys_repr.endswith("])")
+
+
+def test_state_keys_functionality():
+    state = State({"a": 1, "b": 2, "c": 3})
+    keys = state.keys()
+    
+    assert list(keys) == ["a", "b", "c"]
+    
+    assert "a" in keys
+    assert "d" not in keys
+    
+    assert len(keys) == 3
+    
+    empty_state = State()
+    empty_keys = empty_state.keys()
+    assert len(empty_keys) == 0
+    assert list(empty_keys) == []
+
+
+def test_state_keys_compatibility():
+    state = State({"x": 10, "y": 20})
+    keys = state.keys()
+    
+    keys_set = set(keys)
+    assert keys_set == {"x", "y"}
+    
+    collected = []
+    for key in keys:
+        collected.append(key)
+    assert collected == ["x", "y"]

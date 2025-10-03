@@ -22,7 +22,19 @@ import importlib
 import inspect
 import logging
 from functools import cached_property
-from typing import Any, Callable, Dict, Generic, Iterator, Mapping, Optional, TypeVar, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Generic,
+    Iterator,
+    KeysView,
+    List,
+    Mapping,
+    Optional,
+    TypeVar,
+    Union,
+)
 
 from burr.core import serde
 from burr.core.typing import DictBasedTypingSystem, TypingSystem
@@ -270,6 +282,32 @@ StateType = TypeVar("StateType", bound=Union[Dict[str, Any], Any])
 AssignedStateType = TypeVar("AssignedStateType")
 
 
+class StateKeysView:
+    """Custom keys view that only displays keys, not values, for better usability.
+    
+    This addresses issue #409 by providing a clean representation of state keys
+    without showing the potentially large values that make debugging difficult.
+    """
+    
+    def __init__(self, keys_view: KeysView[Any]) -> None:
+        self._keys_view = keys_view
+    
+    def __iter__(self) -> Iterator[Any]:
+        return iter(self._keys_view)
+    
+    def __len__(self) -> int:
+        return len(self._keys_view)
+    
+    def __contains__(self, key: Any) -> bool:
+        return key in self._keys_view
+    
+    def __repr__(self) -> str:
+        return f"StateKeys({list(self._keys_view)})"
+    
+    def __str__(self) -> str:
+        return repr(self)
+
+
 class State(Mapping, Generic[StateType]):
     """An immutable state object. This is the only way to interact with state in Burr."""
 
@@ -459,6 +497,18 @@ class State(Mapping, Generic[StateType]):
 
     def __iter__(self) -> Iterator[Any]:
         return iter(self._state)
+
+    def keys(self) -> StateKeysView:
+        """Returns a view of the state keys only (without values for cleaner display).
+        
+        This method addresses issue #409 by returning a custom view that displays
+        only the keys when printed, making it usable even when state contains
+        large objects like embeddings or dataframes.
+        
+        Returns:
+            StateKeysView: A view object that shows only keys in its string representation
+        """
+        return StateKeysView(self._state.keys())
 
     def __repr__(self):
         return self.get_all().__repr__()  # quick hack
