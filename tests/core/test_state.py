@@ -229,21 +229,66 @@ def test_state_apply_keeps_typing_system():
 
 
 def test_state_keys_display():
+    """Test that State.keys() displays only keys, not values (issue #409)"""
+    # Test with large objects that would make output unreadable
     large_object = {"embedding": [0.1] * 100, "text": "large text" * 50}
     state = State({"small_key": 42, "large_key": large_object})
     
     keys = state.keys()
     keys_repr = repr(keys)
     
+    # Should return a simple list
+    assert isinstance(keys, list)
+    
+    # Should display only key names, not values
     assert "small_key" in keys_repr
     assert "large_key" in keys_repr
     
+    # Should NOT contain large object data
     assert "embedding" not in keys_repr
     assert "large text" not in keys_repr
     assert "0.1" not in keys_repr
+
+
+def test_state_keys_functionality():
+    """Test that State.keys() maintains expected list functionality"""
+    state = State({"a": 1, "b": 2, "c": 3})
+    keys = state.keys()
     
-    assert keys_repr.startswith("StateKeys(")
-    assert keys_repr.endswith("])")
+    # Should return a list
+    assert isinstance(keys, list)
+    assert keys == ["a", "b", "c"]
+    
+    # Test list operations
+    assert "a" in keys
+    assert "d" not in keys
+    assert len(keys) == 3
+    
+    # Test with empty state
+    empty_state = State()
+    empty_keys = empty_state.keys()
+    assert isinstance(empty_keys, list)
+    assert len(empty_keys) == 0
+    assert empty_keys == []
+
+
+def test_state_keys_compatibility():
+    """Test that State.keys() works with standard list operations"""
+    state = State({"x": 10, "y": 20})
+    keys = state.keys()
+    
+    # Should work with list operations
+    assert isinstance(keys, list)
+    assert sorted(keys) == ["x", "y"]
+    
+    # Should work with indexing
+    assert keys[0] in ["x", "y"]
+    
+    # Should work in for loops
+    collected = []
+    for key in keys:
+        collected.append(key)
+    assert set(collected) == {"x", "y"}
 
 
 def test_state_keys_functionality():
